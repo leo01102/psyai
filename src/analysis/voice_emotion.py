@@ -1,0 +1,1 @@
+# src/analysis/voice_emotion.py | Lógica para analizar emociones vocales (futuro)
