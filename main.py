@@ -1,7 +1,8 @@
-# app.py
+# main.py | Punto de entrada principal para lanzar la aplicación Streamlit
+
 import streamlit as st
 from PIL import Image
-from src.emotion_detector import analyze_image
+from src.analysis.facial_emotion import analyze_image
 
 st.set_page_config(page_title="PsyAI - Demo", layout="centered")
 st.title("PsyAI - Demo")

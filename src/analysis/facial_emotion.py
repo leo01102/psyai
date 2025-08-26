@@ -1,4 +1,5 @@
-# src/emotion_detector.py
+# src/analysis/facial_emotion.py | Lógica para detectar emociones faciales (reemplaza emotion_detector.py)
+
 import numpy as np
 import cv2
 from PIL import Image

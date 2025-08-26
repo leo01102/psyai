@@ -1,0 +1,1 @@
+# src/ui/components.py | Funciones que renderizan partes de la UI (ej: el video, el chat)
