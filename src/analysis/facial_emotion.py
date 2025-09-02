@@ -1,79 +1,72 @@
 # src/analysis/facial_emotion.py | Lógica para detectar emociones faciales (reemplaza emotion_detector.py)
 
-import numpy as np
-import cv2
-from PIL import Image
+"""
+Módulo especializado en el análisis de emociones faciales.
+Utiliza la librería FER para detectar la emoción dominante y las puntuaciones
+de un fotograma de video proporcionado.
+"""
 
-# Intentaremos usar FER si está instalado; si no, haremos fallback con Haar cascades (OpenCV puro).
+# Importamos las librerías necesarias. El try/except es una buena práctica
+# para dar un mensaje de error claro si la librería no está instalada.
 try:
     from fer import FER
-    FER_AVAILABLE = True
-except Exception:
-    FER_AVAILABLE = False
+except ImportError:
+    print("Por favor, instala la librería 'fer' con: pip install fer")
+    FER = None
 
-def analyze_with_fer(img_np):
+def initialize_detector():
     """
-    img_np: numpy array (RGB)
-    returns: dict {'dominant': str, 'scores': {...}}
+    Inicializa y devuelve el detector de emociones faciales.
+    Esta función se debe llamar UNA SOLA VEZ al inicio de la aplicación
+    para evitar cargar el modelo repetidamente.
+    
+    Returns:
+        Un objeto detector de FER si la librería está disponible, si no, None.
     """
-    if not FER_AVAILABLE:
-        raise ImportError("FER no está disponible")
+    if FER is None:
+        return None
+    
+    # mtcnn=True utiliza un detector de caras más avanzado y preciso.
+    print("Cargando modelo de detección facial (FER)...")
     detector = FER(mtcnn=True)
-    detections = detector.detect_emotions(img_np)
-    if not detections:
-        raise ValueError("No se detectó ninguna cara (FER).")
-    emotions = detections[0]["emotions"]
-    dominant = max(emotions, key=emotions.get)
-    return {"dominant": dominant, "scores": emotions}
+    print("Modelo cargado exitosamente.")
+    return detector
 
-def analyze_with_haar(img_np):
+def analyze_frame_emotions(detector, frame_np):
     """
-    Método de reserva usando OpenCV Haar cascades.
-    Detecta cara + sonrisa y devuelve 'happy' o 'neutral' según un umbral simple.
-    img_np: numpy array (RGB)
+    Analiza un único fotograma de video y devuelve un diccionario de emociones.
+    
+    Args:
+        detector: El objeto FER pre-inicializado por initialize_detector().
+        frame_np: Un fotograma de video como un array de NumPy (en formato BGR).
+        
+    Returns:
+        Un diccionario con los resultados del análisis o None si no se detecta cara.
+        Ejemplo de retorno: {'dominant_emotion': 'happy', 'scores': {'happy': 0.9, ...}}
     """
-    gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
+    if detector is None:
+        raise RuntimeError("El detector FER no está inicializado. Asegúrate de que la librería 'fer' esté instalada.")
 
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
-    smile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_smile.xml")
-
-    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(80, 80))
-    if len(faces) == 0:
-        raise ValueError("No se detectó ninguna cara (Haar fallback).")
-
-    # tomamos la primera cara detectada
-    (x, y, w, h) = faces[0]
-    roi_gray = gray[y:y+h, x:x+w]
-
-    # detect smiles dentro del ROI de la cara
-    smiles = smile_cascade.detectMultiScale(roi_gray, scaleFactor=1.7, minNeighbors=22, minSize=(25, 25))
-    # heurística simple:
-    if len(smiles) > 0:
-        dominant = "happy"
-        scores = {"happy": 0.9, "neutral": 0.1}
-    else:
-        dominant = "neutral"
-        scores = {"happy": 0.05, "neutral": 0.95}
-
-    return {"dominant": dominant, "scores": scores}
-
-def analyze_image(img_pil):
-    """
-    img_pil: PIL.Image
-    returns: {'dominant': str, 'scores': {...}, 'backend': 'fer'|'haar'}
-    """
-    img_np = np.array(img_pil.convert("RGB"))
-    # First try FER if available
-    if FER_AVAILABLE:
-        try:
-            out = analyze_with_fer(img_np)
-            out["backend"] = "fer"
-            return out
-        except Exception as e:
-            # log in console for debugging, but fallthrough to haar
-            print(f"[emotion_detector] FER failed: {e}")
-
-    # Haar fallback (no TF)
-    out = analyze_with_haar(img_np)
-    out["backend"] = "haar"
-    return out
+    try:
+        # La librería FER se encarga de la detección de la cara y el análisis de emociones.
+        # El resultado es una lista de caras detectadas.
+        detections = detector.detect_emotions(frame_np)
+        
+        if not detections:
+            return None  # No se detectó ninguna cara en el fotograma.
+            
+        # Nos enfocamos en la primera cara detectada para este prototipo.
+        first_face = detections[0]
+        emotions = first_face["emotions"]
+        dominant_emotion = max(emotions, key=emotions.get)
+        
+        # Devolvemos un payload estructurado y limpio.
+        return {
+            "dominant_emotion": dominant_emotion,
+            "scores": emotions,
+            "bounding_box": first_face["box"]  # Coordenadas (x, y, w, h) para dibujar
+        }
+    except Exception as e:
+        # Es bueno registrar el error para depuración, pero no debe detener la aplicación.
+        print(f"Error durante el análisis facial: {e}")
+        return None
