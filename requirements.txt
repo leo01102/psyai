@@ -1,4 +1,21 @@
+# === Core Application Libraries ===
 streamlit
-pillow
-numpy
-opencv-python
+streamlit-webrtc
+fer
+streamlit-audiorecorder
+simpleaudio
+soundfile
+pydub
+keyboard
+python-dotenv
+cryptography
+
+# === Manually Resolved Dependencies (Crucial for Stability) ===
+moviepy==1.0.3
+tensorflow
+opencv-contrib-python
+
+# === API SDKs ===
+groq
+deepgram-sdk
+edge-tts
