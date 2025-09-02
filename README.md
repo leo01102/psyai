@@ -1,37 +1,41 @@
-# PsyAI: Un Psicólogo con IA Emocional
+# PsyAI: Un Asistente con IA Emocional
 
-[![Estado del Proyecto](https://img.shields.io/badge/estado-en%20desarrollo-green.svg)](https://github.com/tu-usuario/psyai)
-[![Licencia](https://img.shields.io/badge/licencia-MIT-blue.svg)](LICENSE.md)
+[![Estado del Proyecto](https://img.shields.io/badge/estado-en%20desarrollo-green.svg)](https://github.com/leo01102/psyai)
+[![Licencia](https://img.shields.io/badge/licencia-MIT-blue.svg)](LICENSE)
 [![Python Version](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
 
-**PsyAI es un prototipo de asistente psicológico que utiliza inteligencia artificial para ofrecer un apoyo más empático mediante la detección de emociones faciales y vocales del usuario en tiempo real.**
+**PsyAI es un prototipo de asistente de IA que ofrece un apoyo empático mediante la detección de emociones faciales y la interacción por voz en tiempo real.**
 
-A diferencia de los chatbots tradicionales, PsyAI integra un análisis emocional multimodal para comprender el estado del usuario y adaptar sus respuestas, buscando cubrir una necesidad clave en el campo de la salud mental accesible.
+A diferencia de los chatbots tradicionales, PsyAI integra un análisis emocional multimodal y una memoria persistente para comprender el estado del usuario y adaptar sus respuestas, buscando crear una experiencia más humana y conectada.
 
 <br>
 
-![GIF o Screenshot de la aplicación en funcionamiento](docs/images/placeholder.png)
+<!-- ![GIF de la aplicación en funcionamiento](docs/images/demo.gif) -->
+
 _(Reemplazar con una captura de pantalla o GIF de la demo)_
 
 ---
 
 ## ✨ Características Principales
 
-- **Detección de Emociones Faciales:** Utiliza la webcam para identificar en tiempo real emociones básicas como alegría, tristeza, enojo y sorpresa.
-- **IA Conversacional Local:** Se integra con un modelo de lenguaje (Mistral 7B) corriendo localmente a través de LM Studio para garantizar la privacidad.
-- **Respuestas Empáticas:** El sistema utiliza el contexto emocional detectado para generar respuestas más consideradas y relevantes.
-- **Interfaz Sencilla:** Construido con Streamlit para una experiencia de usuario limpia y directa.
+- **Detección de Emociones Faciales:** Utiliza la webcam para identificar en tiempo real un estado emocional estable y agregado.
+- **Interacción por Voz Completa:** Conversa de forma natural con la IA gracias a un ciclo de audio completo:
+  - **Transcripción Rápida:** Utiliza **Deepgram** para una transcripción precisa de la voz del usuario.
+  - **Respuestas Habladas:** Genera audio con una voz natural usando **Edge-TTS**.
+- **IA Conversacional de Alta Velocidad:** Se integra con el modelo **Llama 3.1** a través de la API de **Groq** para obtener respuestas casi instantáneas.
+- **Memoria a Largo Plazo:** La IA recuerda datos clave de conversaciones anteriores para ofrecer una experiencia más personalizada.
+- **Seguridad y Privacidad:** Las conversaciones y los datos de memoria se cifran antes de guardarse en la base de datos local.
 
 ---
 
 ## 🛠️ Stack Tecnológico
 
-| Área                | Herramienta                                              |
-| :------------------ | :------------------------------------------------------- |
-| **IA & Backend**    | Python, LM Studio (Mistral 7B), `fer`/`deepface`, OpenCV |
-| **Frontend**        | Streamlit                                                |
-| **Base de Datos**   | SQLite                                                   |
-| **Infraestructura** | Ejecución 100% Local                                     |
+| Área              | Herramienta                                                                     |
+| :---------------- | :------------------------------------------------------------------------------ |
+| **IA & Backend**  | Python, **Groq (Llama 3.1)**, **Deepgram**, **Edge-TTS**, `fer`, `cryptography` |
+| **Frontend**      | Streamlit, `audiorecorder`, `streamlit-webrtc`                                  |
+| **Base de Datos** | SQLite                                                                          |
+| **Testing**       | `pytest`                                                                        |
 
 Para una descripción detallada de la arquitectura, consulta el [**Documento de Información del Proyecto**](docs/01_project_info.md).
 
@@ -43,37 +47,60 @@ Sigue estos pasos para poner en marcha el proyecto en tu máquina local.
 
 ### Prerrequisitos
 
-- **Python 3.9 o superior.**
+- **Python 3.9–3.12.** Probado con **Python 3.11.9**.
 - **Git** para clonar el repositorio.
-- **LM Studio:** Descárgalo desde [lmstudio.ai](https://lmstudio.ai/).
+- **Cuentas de API:**
+  - Una cuenta en [**Groq**](https://console.groq.com/keys) para obtener una API Key.
+  - Una cuenta en [**Deepgram**](https://console.deepgram.com/signup) para obtener una API Key.
 
-### 1. Configuración del Modelo de IA (LM Studio)
-
-Antes de ejecutar la aplicación, necesitas tener el modelo de lenguaje sirviendo localmente.
-
-1.  Abre LM Studio.
-2.  Busca y descarga el modelo `Mistral 7B Instruct`.
-3.  Ve a la pestaña del servidor local (`<>`) y selecciona el modelo que descargaste.
-4.  Haz clic en **"Start Server"**. Esto expondrá el modelo en una API local, generalmente en `http://localhost:1234/v1`.
-
-### 2. Instalación del Proyecto
+### 1. Instalación del Proyecto
 
 ```bash
 # 1. Clona el repositorio
-git clone https://github.com/tu-usuario/psyai.git
+git clone https://github.com/leo01102/psyai.git
 cd psyai
 
 # 2. Crea y activa un entorno virtual (recomendado)
-python -m venv venv
-source venv/bin/activate  # En Windows: venv\Scripts\activate
+python -m venv .venv
+# En Windows:
+.venv\Scripts\activate
+# En macOS/Linux:
+# source .venv/bin/activate
 
 # 3. Instala las dependencias
 pip install -r requirements.txt
+
+# 4. (Opcional) Puebla la base de datos con datos de prueba
+python scripts/seed_database.py
 ```
+
+### 2. Configuración de Claves (¡Importante!)
+
+#### Paso A: Generar Clave de Cifrado
+
+La aplicación necesita una clave secreta para cifrar los datos en la base de datos. Ejecuta el siguiente script para generar una:
+
+```bash
+python scripts/generate_key.py
+```
+
+Copia la línea `ENCRYPTION_KEY=...` que se mostrará en la terminal.
+
+#### Paso B: Crear el Archivo `.env`
+
+1.  En la raíz del proyecto, crea un archivo llamado `.env`.
+2.  Pega el siguiente contenido, reemplazando los valores con tus propias claves y la clave de cifrado que acabas de generar:
+
+    ```env
+    # .env
+    DEEPGRAM_API_KEY="TU_API_KEY_DE_DEEPGRAM"
+    GROQ_API_KEY="TU_API_KEY_DE_GROQ"
+    ENCRYPTION_KEY="PEGA_AQUI_LA_CLAVE_GENERADA"
+    ```
 
 ### 3. Ejecución
 
-Con el servidor de LM Studio corriendo en segundo plano, lanza la aplicación Streamlit:
+Con el archivo `.env` configurado, lanza la aplicación Streamlit:
 
 ```bash
 streamlit run main.py
@@ -85,36 +112,29 @@ Abre tu navegador y ve a **http://localhost:8501**.
 
 ## 📂 Estructura del Proyecto
 
-El proyecto sigue una estructura modular para facilitar el mantenimiento y la escalabilidad. El código fuente principal reside en la carpeta `src/`, separado por responsabilidades como el análisis de emociones, la interacción con el chat y la gestión de la base de datos.
+El proyecto sigue una estructura modular profesional, separando la lógica, las pruebas y los scripts de utilidad.
 
 ➡️ Para una explicación detallada de cada carpeta y archivo, consulta la [**Guía de Estructura del Repositorio**](docs/02_structure_info.md).
-
-➡️ Para entender cómo se almacenan los datos de las interacciones, revisa el [**Diseño de la Base de Datos**](docs/03_database_info.md).
 
 ---
 
 ## 🗺️ Roadmap y Futuras Mejoras
 
-Tenemos varias mejoras planeadas para hacer de PsyAI una herramienta aún más robusta:
-
+- [x] **Ciclo de Audio Completo (STT/TTS)**
+- [x] **Análisis de Emoción Facial**
+- [x] **Persistencia de Sesiones y Memoria (Cifrada)**
+- [x] **Estructura de UI Modular**
 - [ ] **Análisis de Emoción Vocal:** Integrar librerías para detectar emociones a partir del tono y el ritmo de la voz.
-- [ ] **Transcripción de Voz a Texto:** Utilizar `Whisper` para permitir al usuario hablar directamente con la aplicación.
-- [ ] **Speech Timeout Personalizable:** Añadir una opción para que el usuario pueda hablar sin ser interrumpido.
-- [ ] **Persistencia de Sesiones:** Mejorar el historial de conversaciones utilizando la base de datos SQLite.
+- [ ] **Interfaz de Usuario Avanzada:** Implementar un botón "hold-to-talk", timeline de emociones y opciones de speech-timeout.
 
 ---
 
 ## 🤝 Contribuciones
 
-Este es un proyecto en crecimiento y las ideas son bienvenidas. Si deseas contribuir, por favor sigue el flujo de trabajo estándar:
-
-1.  Crea un **Fork** del repositorio.
-2.  Crea una nueva **rama** para tu feature (`git checkout -b feat/nombre-feature`).
-3.  Haz **commit** de tus cambios.
-4.  Abre un **Pull Request** hacia la rama `main` de este repositorio.
+Este es un proyecto en crecimiento y las ideas son bienvenidas. Por favor, sigue el flujo de trabajo estándar de Fork y Pull Request.
 
 ---
 
 ## 📄 Licencia
 
-Este proyecto está bajo la Licencia MIT. Consulta el archivo [LICENSE.md](LICENSE.md) para más detalles.
+Este proyecto está bajo la Licencia MIT. Consulta el archivo [LICENSE](LICENSE) para más detalles.

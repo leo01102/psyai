@@ -2,9 +2,13 @@
 __pycache__/
 *.pyc
 .env
+*.env
 .venv/
 venv/
 *.egg-info/
+
+# Pytest
+.pytest_cache/
 
 # OS
 .DS_Store
@@ -12,3 +16,7 @@ Thumbs.db
 
 # Streamlit / logs
 *.log
+logs/
+
+# Datos de la aplicación
+data/

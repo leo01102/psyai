@@ -3,56 +3,57 @@
 ```plaintext
 psyai/
 │
-├── .gitignore          # Ignora archivos y carpetas que no deben subirse (ej: __pycache__, .env)
-├── README.md           # Documentación principal del proyecto: qué es, cómo instalarlo y ejecutarlo.
-├── requirements.txt    # Lista de dependencias de Python para instalar con pip.
-├── config.py           # Archivo de configuración (ej: URL de la API de LM Studio, timeouts).
+├── .env                # Archivo local para claves de API y cifrado (ignorado por Git).
+├── .gitignore          # Ignora archivos y carpetas que no deben subirse.
+├── README.md           # Documentación principal y guía de inicio rápido.
+├── requirements.txt    # Dependencias de Python.
+├── config.py           # Carga y centraliza las variables de configuración.
 │
-├── main.py             # Punto de entrada principal para lanzar la aplicación Streamlit.
+├── main.py             # Punto de entrada principal para la aplicación Streamlit.
 │
-├── src/                # Directorio principal para todo el código fuente de la aplicación.
-│   │
-│   ├── __init__.py     # Convierte 'src' en un paquete de Python.
-│   │
-│   ├── analysis/       # Módulo para el análisis de emociones (facial y de voz).
-│   │   ├── __init__.py
-│   │   ├── facial_emotion.py   # Lógica para detectar emociones faciales (reemplaza emotion_detector.py).
-│   │   └── voice_emotion.py    # Lógica para analizar emociones vocales (futuro).
-│   │
-│   ├── chat/           # Módulo para la interacción con el modelo de lenguaje.
-│   │   ├── __init__.py
-│   │   └── llm_client.py       # Cliente para comunicarse con la API de LM Studio.
-│   │   └── prompt_builder.py   # Lógica para construir los prompts con contexto emocional.
-│   │
-│   ├── database/       # Módulo para la gestión de la base de datos.
-│   │   ├── __init__.py
-│   │   └── data_manager.py     # Funciones para inicializar la DB, guardar y consultar registros.
-│   │
-│   └── ui/             # Módulo para los componentes de la interfaz de Streamlit.
-│       ├── __init__.py
-│       └── components.py       # Funciones que renderizan partes de la UI (ej: el video, el chat).
+├───data/               # (Ignorado por Git) Almacena la base de datos local.
+│   └── psyai.db
 │
-├── data/               # Directorio para los datos persistentes (no subir a Git si son sensibles).
-│   └── interactions.db # El archivo de la base de datos SQLite.
+├───docs/               # Documentación detallada del proyecto.
+│   ├── 01_project_info.md
+│   ├── 02_structure_info.md
+│   └── 03_database_info.md
 │
-└── notebooks/          # Jupyter notebooks para experimentación, análisis y pruebas.
-    ├── 01_test_facial_recognition.ipynb
-    └── 02_explore_voice_analysis.ipynb
+├───logs/               # (Ignorado por Git) Guarda los logs de ejecución de la aplicación.
+│   └── psyai.log
+│
+├───notebooks/          # Jupyter notebooks para experimentación.
+│
+├───scripts/            # Scripts de utilidad que no forman parte de la app principal.
+│   └── generate_key.py
+│
+├───src/                # Código fuente de la aplicación.
+│   ├── analysis/       # Módulos para analizar las entradas del usuario (cara, voz).
+│   ├── audio/          # Módulo para la salida de audio (Text-to-Speech).
+│   ├── chat/           # Módulos para la interacción con el LLM.
+│   ├── database/       # Módulo para la gestión de la base de datos SQLite.
+│   ├── ui/             # Módulo para componentes reutilizables de la interfaz.
+│   └── utils/          # Utilidades compartidas, como la configuración del logger.
+│
+└───tests/              # Pruebas automatizadas.
+    ├── fixtures/       # Archivos de datos para las pruebas (ej. audio de prueba).
+    ├── integration/    # Pruebas que verifican la interacción entre varios módulos.
+    └── unit/           # Pruebas que verifican un solo módulo de forma aislada.
 ```
 
 ---
 
 ### Descripción de Cada Componente
 
-- **`.gitignore`**: Esencial para mantener el repositorio limpio. Debería incluir `__pycache__/`, `*.db`, `.env`, y cualquier otro archivo local.
-- **`README.md`**: Tu carta de presentación. Incluirá la misión del proyecto, el stack tecnológico y las guías de instalación y uso.
-- **`requirements.txt`**: Define las librerías necesarias. Centraliza la gestión de dependencias.
-- **`config.py`**: Centraliza todas las variables de configuración. Facilita cambiar parámetros sin tener que buscar en todo el código. Por ejemplo, la URL de la API de LM Studio o el `speech_timeout` por defecto.
-- **`main.py`**: Este es el nuevo `app.py`. Es el archivo que ejecutarás con `streamlit run main.py`. Su rol principal es orquestar la aplicación: inicializar la UI, llamar a los módulos de análisis y gestionar el flujo principal.
-- **`src/`**: El corazón de tu aplicación.
-  - **`analysis/`**: Separa la lógica de análisis. `facial_emotion.py` contendrá las funciones que ya tenías en `emotion_detector.py`. Cuando agregues el análisis de voz, su lógica irá en `voice_emotion.py`, manteniendo todo ordenado.
-  - **`chat/`**: Dedicado a la comunicación con el LLM. `llm_client.py` se encargará de hacer las peticiones a LM Studio. `prompt_builder.py` será clave para formatear el texto del usuario junto con los datos emocionales (`"emotion: sad"`) antes de enviarlo.
-  - **`database/`**: Responsable de la persistencia de datos. `data_manager.py` tendrá funciones como `create_connection()`, `save_interaction()` y `get_interactions()`.
-  - **`ui/`**: Si tu interfaz crece, puedes mover funciones que dibujan elementos de Streamlit aquí para no saturar `main.py`.
-- **`data/`**: Donde vivirá tu base de datos SQLite. Es buena práctica añadir `data/*.db` al `.gitignore` para no subir los datos de las interacciones al repositorio público.
-- **`notebooks/`**: Un espacio fundamental para la experimentación. Antes de integrar una nueva librería (como `pyAudioAnalysis`), puedes probarla aquí de forma aislada.
+- **`.env`**: Almacena secretos como las API keys y la clave de cifrado. Es vital para la seguridad y no debe subirse a Git.
+- **`config.py`**: El único punto de acceso a las variables de configuración, cargándolas de forma segura desde `.env`.
+- **`main.py`**: Orquesta la aplicación, gestiona el estado de la sesión y coordina las llamadas a los diferentes módulos.
+- **`scripts/`**: Hogar de scripts de utilidad, como `generate_key.py`, que ayudan en la configuración pero no son parte de la aplicación en sí.
+- **`src/`**: El corazón de la aplicación.
+  - **`analysis/`**: Interpreta las entradas del usuario. `facial_emotion.py` extrae emociones del video y `voice_emotion.py` transcribe el audio.
+  - **`audio/`**: Gestiona la salida de audio. `tts_player.py` convierte el texto de la IA en voz.
+  - **`chat/`**: Se comunica con el LLM. `llm_client.py` gestiona las llamadas a la API de Groq y `prompt_builder.py` formatea los prompts.
+  - **`database/`**: Gestiona la persistencia. `data_manager.py` define el esquema, maneja el cifrado y proporciona funciones para interactuar con la base de datos.
+  - **`ui/`**: Contiene funciones que renderizan componentes de la interfaz para mantener `main.py` limpio.
+  - **`utils/`**: Código de utilidad compartido. `logger_config.py` centraliza la configuración del sistema de logging.
+- **`tests/`**: Contiene pruebas automatizadas para garantizar la fiabilidad del código.
