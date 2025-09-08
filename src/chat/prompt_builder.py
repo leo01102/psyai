@@ -15,10 +15,18 @@ def build_llm_prompt(chat_history: list, latest_user_text: str, emotion_data: di
         memory_str = "\n".join([f"- {key.replace('_', ' ').capitalize()}: {value}" for key, value in long_term_memory.items()])
         system_prompt += f"\n\n### Datos clave recordados sobre el usuario:\n{memory_str}"
 
-    # Construir el prompt del usuario con contexto emocional
-    emotion = emotion_data.get('stable_dominant_emotion', 'neutral') if emotion_data else 'neutral'
+    # Construir el prompt del usuario con contexto emocional multimodal
+    facial_emotion = emotion_data.get('facial_dominant', 'neutral')
+    vocal_emotion_data = emotion_data.get('vocal_emotions', [])
     
-    emotional_context = f"Contexto emocional (expresión facial): {emotion.capitalize()}"
+    # Seleccionar la emoción vocal más probable
+    vocal_emotion = vocal_emotion_data[0]['label'].lower() if vocal_emotion_data else 'desconocido'
+    
+    emotional_context = (
+        f"Contexto emocional detectado:\n"
+        f"- Expresión facial: {facial_emotion.capitalize()}\n"
+        f"- Tono de voz: {vocal_emotion.capitalize()}"
+    )
     
     final_user_content = f"{emotional_context}\n\nMensaje del usuario: \"{latest_user_text}\""
     
@@ -28,7 +36,6 @@ def build_llm_prompt(chat_history: list, latest_user_text: str, emotion_data: di
     messages.append({"role": "user", "content": final_user_content})
     
     return messages
-
 
 def build_memory_extraction_prompt(user_text: str, ai_response: str) -> str:
     """Construye un prompt para que el LLM extraiga hechos en formato JSON."""

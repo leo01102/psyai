@@ -1,5 +1,7 @@
 ### Estructura del Repositorio
 
+La estructura se ha diseñado para separar claramente el código fuente de la aplicación (`src`), los recursos de IA (`ai_resources`), los scripts de utilidad (`scripts`) y los datos persistentes (`data`).
+
 ```plaintext
 psyai/
 │
@@ -11,49 +13,52 @@ psyai/
 │
 ├── main.py             # Punto de entrada principal para la aplicación Streamlit.
 │
+├───ai_resources/       # (NUEVO) Almacena todos los recursos de IA locales.
+│   ├── models/
+│   │   └── voice_emotion/  # Modelos ONNX optimizados para emoción vocal.
+│   └── calibration_data/ # (Ignorado por Git) Archivos .wav para calibración de ONNX.
+│
 ├───data/               # (Ignorado por Git) Almacena la base de datos local.
 │   └── psyai.db
 │
 ├───docs/               # Documentación detallada del proyecto.
-│   ├── 01_project_info.md
-│   ├── 02_structure_info.md
-│   └── 03_database_info.md
 │
-├───logs/               # (Ignorado por Git) Guarda los logs de ejecución de la aplicación.
-│   └── psyai.log
-│
-├───notebooks/          # Jupyter notebooks para experimentación.
+├───logs/               # (Ignorado por Git) Guarda los logs de ejecución.
 │
 ├───scripts/            # Scripts de utilidad que no forman parte de la app principal.
-│   └── generate_key.py
+│   ├── export_to_onnx.py # (NUEVO) Script para convertir el modelo de voz a ONNX.
+│   └── generate_key.py   # Script para crear la clave de cifrado.
 │
 ├───src/                # Código fuente de la aplicación.
-│   ├── analysis/       # Módulos para analizar las entradas del usuario (cara, voz).
-│   ├── audio/          # Módulo para la salida de audio (Text-to-Speech).
-│   ├── chat/           # Módulos para la interacción con el LLM.
-│   ├── database/       # Módulo para la gestión de la base de datos SQLite.
-│   ├── ui/             # Módulo para componentes reutilizables de la interfaz.
-│   └── utils/          # Utilidades compartidas, como la configuración del logger.
+│   ├── analysis/       # Módulos para analizar las entradas del usuario.
+│   │   ├── facial_emotion.py      # Lógica de detección facial (FER).
+│   │   ├── voice_emotion.py       # (NUEVO) Lógica de emoción vocal (Wav2Vec2/ONNX).
+│   │   └── voice_transcription.py # (Refactorizado) Lógica de STT (Deepgram).
+│   │
+│   ├── audio/          # Módulo para la salida de audio (TTS).
+│   ├── chat/           # Módulos para la interacción con el LLM (Groq, Prompts).
+│   ├── database/       # Módulo para la gestión de la base de datos SQLite y cifrado.
+│   ├── ui/             # Módulo para componentes reutilizables de Streamlit.
+│   └── utils/          # Utilidades compartidas (logger).
 │
 └───tests/              # Pruebas automatizadas.
-    ├── fixtures/       # Archivos de datos para las pruebas (ej. audio de prueba).
-    ├── integration/    # Pruebas que verifican la interacción entre varios módulos.
-    └── unit/           # Pruebas que verifican un solo módulo de forma aislada.
+    └── ...
 ```
 
 ---
 
 ### Descripción de Cada Componente
 
-- **`.env`**: Almacena secretos como las API keys y la clave de cifrado. Es vital para la seguridad y no debe subirse a Git.
-- **`config.py`**: El único punto de acceso a las variables de configuración, cargándolas de forma segura desde `.env`.
-- **`main.py`**: Orquesta la aplicación, gestiona el estado de la sesión y coordina las llamadas a los diferentes módulos.
-- **`scripts/`**: Hogar de scripts de utilidad, como `generate_key.py`, que ayudan en la configuración pero no son parte de la aplicación en sí.
-- **`src/`**: El corazón de la aplicación.
-  - **`analysis/`**: Interpreta las entradas del usuario. `facial_emotion.py` extrae emociones del video y `voice_emotion.py` transcribe el audio.
-  - **`audio/`**: Gestiona la salida de audio. `tts_player.py` convierte el texto de la IA en voz.
-  - **`chat/`**: Se comunica con el LLM. `llm_client.py` gestiona las llamadas a la API de Groq y `prompt_builder.py` formatea los prompts.
-  - **`database/`**: Gestiona la persistencia. `data_manager.py` define el esquema, maneja el cifrado y proporciona funciones para interactuar con la base de datos.
-  - **`ui/`**: Contiene funciones que renderizan componentes de la interfaz para mantener `main.py` limpio.
-  - **`utils/`**: Código de utilidad compartido. `logger_config.py` centraliza la configuración del sistema de logging.
-- **`tests/`**: Contiene pruebas automatizadas para garantizar la fiabilidad del código.
+-   **`ai_resources/`**: (NUEVO) Carpeta dedicada a los artefactos de IA que no son código Python.
+    -   **`models/`**: Contiene los modelos pre-entrenados y optimizados (como los archivos `.onnx`) listos para inferencia.
+    -   **`calibration_data/`**: Almacena datos de muestra (ej. archivos `.wav`) utilizados por scripts para optimizar o cuantizar modelos.
+-   **`scripts/`**: Hogar de scripts de utilidad.
+    -   `generate_key.py`: Se usa una vez para crear la `ENCRYPTION_KEY`.
+    -   `export_to_onnx.py`: Se usa una vez para descargar y convertir el modelo de emoción vocal de Hugging Face a un formato ONNX más rápido.
+-   **`src/`**: El corazón de la aplicación.
+    -   **`analysis/`**: (Refactorizado) Ahora tiene responsabilidades claras:
+        -   `facial_emotion.py`: Extrae emociones del video.
+        -   `voice_emotion.py`: Extrae emociones del audio (Wav2Vec 2.0).
+        -   `voice_transcription.py`: Transcribe el audio a texto (Deepgram).
+    -   **`database/`**: Gestiona la persistencia. `data_manager.py` define el esquema, maneja el cifrado y proporciona funciones CRUD para la base de datos.
+-   **`main.py`**: Orquesta la aplicación, carga los modelos (facial y vocal), gestiona el estado de la sesión y coordina el flujo de datos multimodal.
