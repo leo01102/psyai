@@ -1,12 +1,12 @@
-# PsyAI: Un Asistente con IA Emocional
+# PsyAI: Un Asistente con IA Emocional Multimodal
 
 [![Estado del Proyecto](https://img.shields.io/badge/estado-en%20desarrollo-green.svg)](https://github.com/leo01102/psyai)
 [![Licencia](https://img.shields.io/badge/licencia-MIT-blue.svg)](LICENSE)
 [![Python Version](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
 
-**PsyAI es un prototipo de asistente de IA que ofrece un apoyo empático mediante la detección de emociones faciales y la interacción por voz en tiempo real.**
+**PsyAI es un prototipo de asistente de IA que ofrece un apoyo empático mediante la detección de emociones faciales y vocales, combinado con una interacción por voz en tiempo real.**
 
-A diferencia de los chatbots tradicionales, PsyAI integra un análisis emocional multimodal y una memoria persistente para comprender el estado del usuario y adaptar sus respuestas, buscando crear una experiencia más humana y conectada.
+A diferencia de los chatbots tradicionales, PsyAI integra un análisis emocional multimodal (rostro y voz) para comprender el estado completo del usuario y adaptar sus respuestas, buscando crear una experiencia de usuario más humana y conectada.
 
 <br>
 
@@ -18,24 +18,28 @@ _(Reemplazar con una captura de pantalla o GIF de la demo)_
 
 ## ✨ Características Principales
 
-- **Detección de Emociones Faciales:** Utiliza la webcam para identificar en tiempo real un estado emocional estable y agregado.
+- **Análisis Emocional Multimodal:**
+  - **Detección de Emociones Faciales:** Utiliza la webcam para identificar en tiempo real emociones (ej. alegría, tristeza, enojo) usando `fer`.
+  - **Reconocimiento de Emociones Vocales:** Analiza el tono de voz para detectar la emoción subyacente (ej. calma, felicidad, rabia) usando un modelo **Wav2Vec 2.0** optimizado.
 - **Interacción por Voz Completa:** Conversa de forma natural con la IA gracias a un ciclo de audio completo:
-  - **Transcripción Rápida:** Utiliza **Deepgram** para una transcripción precisa de la voz del usuario.
+  - **Transcripción en Tiempo Real:** Utiliza **Deepgram** para una transcripción rápida y precisa de la voz del usuario.
   - **Respuestas Habladas:** Genera audio con una voz natural usando **Edge-TTS**.
 - **IA Conversacional de Alta Velocidad:** Se integra con el modelo **Llama 3.1** a través de la API de **Groq** para obtener respuestas casi instantáneas.
-- **Memoria a Largo Plazo:** La IA recuerda datos clave de conversaciones anteriores para ofrecer una experiencia más personalizada.
-- **Seguridad y Privacidad:** Las conversaciones y los datos de memoria se cifran antes de guardarse en la base de datos local.
+- **Respuestas Empáticas Contextualizadas:** El sistema combina el texto del usuario con el contexto emocional multimodal (facial + vocal) para generar respuestas más consideradas y relevantes.
+- **Memoria Persistente y Cifrada:** Recuerda hechos clave de conversaciones pasadas (ej. nombre, temas recurrentes) guardándolos de forma segura en una base de datos **SQLite** local con cifrado AES.
 
 ---
 
 ## 🛠️ Stack Tecnológico
 
-| Área              | Herramienta                                                                     |
-| :---------------- | :------------------------------------------------------------------------------ |
-| **IA & Backend**  | Python, **Groq (Llama 3.1)**, **Deepgram**, **Edge-TTS**, `fer`, `cryptography` |
-| **Frontend**      | Streamlit, `audiorecorder`, `streamlit-webrtc`                                  |
-| **Base de Datos** | SQLite                                                                          |
-| **Testing**       | `pytest`                                                                        |
+| Área                | Herramienta                                                    |
+| :------------------ | :------------------------------------------------------------- |
+| **IA & Backend**    | Python, **Groq (Llama 3.1)**, **Deepgram (STT)**, **Edge-TTS** |
+| **Análisis Facial** | `fer` (TensorFlow)                                             |
+| **Análisis Vocal**  | `transformers`, `Wav2Vec 2.0`, `ONNX Runtime`, `librosa`       |
+| **Frontend**        | Streamlit, `streamlit-webrtc`, `audiorecorder`                 |
+| **Base de Datos**   | SQLite, `cryptography` (para cifrado)                          |
+| **Infraestructura** | Ejecución Local (con APIs externas)                            |
 
 Para una descripción detallada de la arquitectura, consulta el [**Documento de Información del Proyecto**](docs/01_project_info.md).
 
@@ -52,6 +56,7 @@ Sigue estos pasos para poner en marcha el proyecto en tu máquina local.
 - **Cuentas de API:**
   - Una cuenta en [**Groq**](https://console.groq.com/keys) para obtener una API Key.
   - Una cuenta en [**Deepgram**](https://console.deepgram.com/signup) para obtener una API Key.
+- **(Opcional) Datos de Calibración:** Si deseas optimizar el modelo de voz (requiere mucha RAM), descarga algunos archivos `.wav` de habla (ej. de [RAVDESS](https://zenodo.org/record/1188976)).
 
 ### 1. Instalación del Proyecto
 
@@ -67,40 +72,42 @@ python -m venv .venv
 # En macOS/Linux:
 # source .venv/bin/activate
 
-# 3. Instala las dependencias
+# 3. Instala todas las dependencias
 pip install -r requirements.txt
-
-# 4. (Opcional) Puebla la base de datos con datos de prueba
-python scripts/seed_database.py
 ```
 
-### 2. Configuración de Claves (¡Importante!)
-
-#### Paso A: Generar Clave de Cifrado
-
-La aplicación necesita una clave secreta para cifrar los datos en la base de datos. Ejecuta el siguiente script para generar una:
-
-```bash
-python scripts/generate_key.py
-```
-
-Copia la línea `ENCRYPTION_KEY=...` que se mostrará en la terminal.
-
-#### Paso B: Crear el Archivo `.env`
+### 2. Configuración de API Keys y Cifrado
 
 1.  En la raíz del proyecto, crea un archivo llamado `.env`.
-2.  Pega el siguiente contenido, reemplazando los valores con tus propias claves y la clave de cifrado que acabas de generar:
+2.  Ejecuta el script para generar tu clave de cifrado local:
+    ```bash
+    python scripts/generate_key.py
+    ```
+3.  Copia la clave generada (`ENCRYPTION_KEY=...`) y pégala en tu archivo `.env`.
+4.  Añade tus claves de API al mismo archivo `.env`:
 
     ```env
     # .env
     DEEPGRAM_API_KEY="TU_API_KEY_DE_DEEPGRAM"
     GROQ_API_KEY="TU_API_KEY_DE_GROQ"
-    ENCRYPTION_KEY="PEGA_AQUI_LA_CLAVE_GENERADA"
+    ENCRYPTION_KEY="TU_CLAVE_GENERADA_EN_EL_PASO_ANTERIOR"
     ```
 
-### 3. Ejecución
+### 3. Generación de Modelos de IA Locales
 
-Con el archivo `.env` configurado, lanza la aplicación Streamlit:
+Este proyecto utiliza una versión optimizada (ONNX) del modelo de emoción vocal. Debes generarla una sola vez ejecutando el siguiente script:
+
+```bash
+# Este script descargará el modelo de Hugging Face y lo convertirá
+python scripts/export_to_onnx.py
+```
+
+- El script creará automáticamente los modelos `float32` y `dynamic_quant` en `ai_resources/models/voice_emotion/`.
+- Te **preguntará** si deseas ejecutar la "cuantización estática". Este paso es **opcional** y consume mucha RAM. Puedes escribir `n` (No) y la aplicación funcionará perfectamente.
+
+### 4. Ejecución
+
+Con el archivo `.env` configurado y los modelos generados, lanza la aplicación:
 
 ```bash
 streamlit run main.py
@@ -112,7 +119,7 @@ Abre tu navegador y ve a **http://localhost:8501**.
 
 ## 📂 Estructura del Proyecto
 
-El proyecto sigue una estructura modular profesional, separando la lógica, las pruebas y los scripts de utilidad.
+El proyecto sigue una estructura modular para facilitar el mantenimiento. El código fuente reside en `src/` y los modelos de IA en `ai_resources/`.
 
 ➡️ Para una explicación detallada de cada carpeta y archivo, consulta la [**Guía de Estructura del Repositorio**](docs/02_structure_info.md).
 
@@ -120,18 +127,19 @@ El proyecto sigue una estructura modular profesional, separando la lógica, las 
 
 ## 🗺️ Roadmap y Futuras Mejoras
 
-- [x] **Ciclo de Audio Completo (STT/TTS)**
-- [x] **Análisis de Emoción Facial**
-- [x] **Persistencia de Sesiones y Memoria (Cifrada)**
-- [x] **Estructura de UI Modular**
-- [ ] **Análisis de Emoción Vocal:** Integrar librerías para detectar emociones a partir del tono y el ritmo de la voz.
-- [ ] **Interfaz de Usuario Avanzada:** Implementar un botón "hold-to-talk", timeline de emociones y opciones de speech-timeout.
+- [x] **Transcripción de Voz a Texto:** Implementado con Deepgram.
+- [x] **Análisis de Emoción Facial:** Integrado con `fer`.
+- [x] **Análisis de Emoción Vocal:** ¡Implementado con Wav2Vec 2.0 y ONNX!
+- [x] **Respuestas Multimodales:** El prompt de la IA ahora usa contexto facial y vocal.
+- [x] **Persistencia y Memoria Cifrada:** Implementado con SQLite y `cryptography`.
+- [x] **Ciclo de Audio Completo (TTS/STT):** Implementado.
+- [x] **Mejorar Componentes UI:** Lógica de renderizado movida a `src/ui/components.py`.
 
 ---
 
 ## 🤝 Contribuciones
 
-Este es un proyecto en crecimiento y las ideas son bienvenidas. Por favor, sigue el flujo de trabajo estándar de Fork y Pull Request.
+Este es un proyecto en crecimiento y las ideas son bienvenidas. Si deseas contribuir, por favor sigue el flujo de trabajo estándar de Fork y Pull Request.
 
 ---
 
