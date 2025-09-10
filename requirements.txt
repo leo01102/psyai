@@ -11,13 +11,13 @@ python-dotenv
 cryptography
 
 # === Manually Resolved Dependencies (Crucial for Stability) ===
-moviepy==1.0.3
+moviepy==2.2.1
 tensorflow
 opencv-contrib-python
 
 # === API SDKs ===
 groq
-deepgram-sdk==2.12.0
+deepgram-sdk==4.8.1
 edge-tts
 
 # === Speech Emotion Recognition ===
