@@ -1,0 +1,17 @@
+version: 2
+updates:
+  # Mantener actualizadas las dependencias de Python (pip)
+  - package-ecosystem: "pip"
+    directory: "/" # Location of package manifests
+    schedule:
+      interval: "weekly"
+    groups:
+      python-dependencies:
+        patterns:
+          - "*"
+
+  # Mantener actualizadas las GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/" # Busca workflows en el directorio .github/
+    schedule:
+      interval: "weekly"
